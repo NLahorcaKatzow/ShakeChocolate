@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ShakyLines")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c5c6054eee01e872b60993d9805eaf693fd80e72")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0edfa2e73f17cd144ee1ff640e03341b38b7bf7")]
 [assembly: System.Reflection.AssemblyProductAttribute("ShakyLines")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ShakyLines")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
