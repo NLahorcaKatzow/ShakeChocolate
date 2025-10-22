@@ -1,0 +1,14 @@
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.AssemblyInfoInputs.cache
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.AssemblyInfo.cs
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.csproj.CoreCompileInputs.cache
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\bin\Debug\net8.0-windows\ShakyLines.exe
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\bin\Debug\net8.0-windows\ShakyLines.deps.json
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\bin\Debug\net8.0-windows\ShakyLines.runtimeconfig.json
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\bin\Debug\net8.0-windows\ShakyLines.dll
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\bin\Debug\net8.0-windows\ShakyLines.pdb
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.dll
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\refint\ShakyLines.dll
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.pdb
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.genruntimeconfig.cache
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ref\ShakyLines.dll
