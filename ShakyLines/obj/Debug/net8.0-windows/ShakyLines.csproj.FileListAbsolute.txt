@@ -12,3 +12,4 @@ C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows
 C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.pdb
 C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.genruntimeconfig.cache
 C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ref\ShakyLines.dll
+C:\Users\nicol\Documents\Aplicacion de shake\ShakyLines\obj\Debug\net8.0-windows\ShakyLines.sourcelink.json

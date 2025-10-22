@@ -17,6 +17,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.IO.Compression;
+using System.IO;
 
 static class Program
 {
@@ -41,6 +43,7 @@ public class ShakyLinesForm : Form
     private TrackBar tbThreshold = new TrackBar { Minimum = 0, Maximum = 255, Value = 80, TickFrequency = 5 };// umbral negro
 
     private NumericUpDown nudSeed = new NumericUpDown { Minimum = 0, Maximum = int.MaxValue, Value = 1234, Increment = 1, ThousandsSeparator = true };
+    private NumericUpDown nudFPS = new NumericUpDown { Minimum = 1, Maximum = 60, Value = 15, Increment = 1 };
     private CheckBox cbMaskOnly = new CheckBox { Text = "Solo desplazar los negros (más nítido)", Checked = true };
     private CheckBox cbAntiAlias = new CheckBox { Text = "Antialias (bilineal)", Checked = true };
 
@@ -48,14 +51,20 @@ public class ShakyLinesForm : Form
     private Label lblFreq = new Label { Text = "Frecuencia ruido (celdas):" };
     private Label lblThreshold = new Label { Text = "Umbral negro (0-255):" };
     private Label lblSeed = new Label { Text = "Seed:" };
+    private Label lblFPS = new Label { Text = "FPS:" };
 
     private Bitmap? srcBmp;
-    private Bitmap? outBmp;
+    private List<Bitmap> animationFrames = new List<Bitmap>();
+    private System.Windows.Forms.Timer animationTimer = new System.Windows.Forms.Timer();
+    private int currentFrameIndex = 0;
 
     public ShakyLinesForm()
     {
         Text = "Shaky Lines – B/N line shaking";
         MinimumSize = new Size(980, 640);
+        
+        // Initialize animation timer
+        animationTimer.Tick += (_, __) => UpdateAnimationFrame();
 
         // Layout
         var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
@@ -80,6 +89,22 @@ public class ShakyLinesForm : Form
         btnSave.Click += (_, __) => SaveImage();
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            animationTimer?.Stop();
+            animationTimer?.Dispose();
+            
+            foreach (var frame in animationFrames)
+                frame?.Dispose();
+            animationFrames.Clear();
+            
+            srcBmp?.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+
     private Control BuildControlsPanel()
     {
         var p = new Panel { Dock = DockStyle.Fill };
@@ -89,16 +114,18 @@ public class ShakyLinesForm : Form
         flowTop.Controls.Add(btnApply);
         flowTop.Controls.Add(btnSave);
 
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 3, Padding = new Padding(8) };
+        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 4, Padding = new Padding(8) };
         for (int i = 0; i < 6; i++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16.66f));
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 33));
+        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 33));
+        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 33));
         grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
 
         lblStrength.TextAlign = ContentAlignment.MiddleLeft;
         lblFreq.TextAlign = ContentAlignment.MiddleLeft;
         lblThreshold.TextAlign = ContentAlignment.MiddleLeft;
         lblSeed.TextAlign = ContentAlignment.MiddleLeft;
+        lblFPS.TextAlign = ContentAlignment.MiddleLeft;
 
         grid.Controls.Add(lblStrength, 0, 0);
         grid.SetColumnSpan(tbStrength, 2);
@@ -115,10 +142,13 @@ public class ShakyLinesForm : Form
         grid.Controls.Add(lblSeed, 3, 1);
         grid.Controls.Add(nudSeed, 4, 1);
 
-        grid.SetColumnSpan(cbMaskOnly, 3);
-        grid.Controls.Add(cbMaskOnly, 0, 2);
-        grid.SetColumnSpan(cbAntiAlias, 3);
-        grid.Controls.Add(cbAntiAlias, 3, 2);
+        grid.Controls.Add(lblFPS, 0, 2);
+        grid.Controls.Add(nudFPS, 1, 2);
+
+        grid.SetColumnSpan(cbMaskOnly, 2);
+        grid.Controls.Add(cbMaskOnly, 2, 2);
+        grid.SetColumnSpan(cbAntiAlias, 2);
+        grid.Controls.Add(cbAntiAlias, 4, 2);
 
         p.Controls.Add(grid);
         p.Controls.Add(flowTop);
@@ -135,36 +165,67 @@ public class ShakyLinesForm : Form
         if (ofd.ShowDialog(this) == DialogResult.OK)
         {
             srcBmp?.Dispose();
-            outBmp?.Dispose();
             srcBmp = new Bitmap(ofd.FileName);
             picIn.Image = srcBmp;
             picOut.Image = null;
+            
+            // Stop animation when loading new image
+            animationTimer.Stop();
+            foreach (var frame in animationFrames)
+                frame?.Dispose();
+            animationFrames.Clear();
         }
     }
 
     private void SaveImage()
     {
-        if (outBmp == null)
+        if (animationFrames.Count == 0)
         {
-            MessageBox.Show(this, "Primero genera la imagen.", "Guardar", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, "Primero genera la animación.", "Guardar", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
+        
         using var sfd = new SaveFileDialog
         {
-            Filter = "PNG|*.png|JPEG|*.jpg|BMP|*.bmp",
-            Title = "Guardar imagen resultado",
-            FileName = "shaky.png"
+            Filter = "ZIP|*.zip",
+            Title = "Guardar animación como ZIP",
+            FileName = "shaky_animation.zip"
         };
+        
         if (sfd.ShowDialog(this) == DialogResult.OK)
         {
-            var ext = System.IO.Path.GetExtension(sfd.FileName).ToLowerInvariant();
-            var fmt = ext switch
+            try
             {
-                ".jpg" => ImageFormat.Jpeg,
-                ".bmp" => ImageFormat.Bmp,
-                _ => ImageFormat.Png
-            };
-            outBmp.Save(sfd.FileName, fmt);
+                Cursor = Cursors.WaitCursor;
+                
+                using var archive = ZipFile.Open(sfd.FileName, ZipArchiveMode.Create);
+                
+                for (int i = 0; i < animationFrames.Count; i++)
+                {
+                    var entry = archive.CreateEntry($"frame_{i:D3}.png");
+                    using var entryStream = entry.Open();
+                    animationFrames[i].Save(entryStream, ImageFormat.Png);
+                }
+                
+                MessageBox.Show(this, $"Animación guardada con {animationFrames.Count} frames.", "Guardar", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Error al guardar: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
+    }
+
+    private void UpdateAnimationFrame()
+    {
+        if (animationFrames.Count > 0)
+        {
+            currentFrameIndex = (currentFrameIndex + 1) % animationFrames.Count;
+            picOut.Image = animationFrames[currentFrameIndex];
         }
     }
 
@@ -178,16 +239,37 @@ public class ShakyLinesForm : Form
         try
         {
             Cursor = Cursors.WaitCursor;
-            var strength = tbStrength.Value;                 // px
-            var cells = Math.Max(1, tbFreq.Value);           // número de celdas en el eje (controla la escala del ruido)
-            var threshold = (byte)tbThreshold.Value;         // umbral para considerar \"negro\"
-            var seed = (int)nudSeed.Value;
+            
+            // Stop current animation
+            animationTimer.Stop();
+            
+            // Clear previous frames
+            foreach (var frame in animationFrames)
+                frame?.Dispose();
+            animationFrames.Clear();
+            
+            var strength = tbStrength.Value;
+            var cells = Math.Max(1, tbFreq.Value);
+            var threshold = (byte)tbThreshold.Value;
+            var baseSeed = (int)nudSeed.Value;
             var antialias = cbAntiAlias.Checked;
             var maskOnly = cbMaskOnly.Checked;
-
-            outBmp?.Dispose();
-            outBmp = MakeShaky(srcBmp, strength, cells, seed, threshold, antialias, maskOnly);
-            picOut.Image = outBmp;
+            var fps = (int)nudFPS.Value;
+            
+            // Generate frames for 1 second of animation
+            for (int frame = 0; frame < fps; frame++)
+            {
+                // Use frame number to vary the seed for different noise patterns
+                var frameSeed = baseSeed + frame;
+                var frameBmp = MakeShaky(srcBmp, strength, cells, frameSeed, threshold, antialias, maskOnly);
+                animationFrames.Add(frameBmp);
+            }
+            
+            // Start animation
+            currentFrameIndex = 0;
+            picOut.Image = animationFrames[0];
+            animationTimer.Interval = 1000 / fps; // Convert FPS to milliseconds
+            animationTimer.Start();
         }
         finally
         {
